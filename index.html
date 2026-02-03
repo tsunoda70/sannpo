@@ -11,7 +11,7 @@
   <style>
     body { margin: 0; font-family: sans-serif; }
     #map { width: 100vw; height: 100vh; }
-    .btn {
+    button {
       position: absolute;
       bottom: 20px;
       left: 50%;
@@ -19,7 +19,9 @@
       padding: 12px 20px;
       background: #2ecc71;
       color: white;
+      border: none;
       border-radius: 8px;
+      font-size: 16px;
       cursor: pointer;
       z-index: 10;
     }
@@ -28,15 +30,17 @@
 <body>
 
 <div id="map"></div>
-<div class="btn" onclick="tryGenerateRoute()">今日の散歩コース</div>
+<button id="routeBtn">今日の散歩コース</button>
 
-<script>
+<script src="script.js"></script>
+</body>
+</html>
 mapboxgl.accessToken = "YOUR_MAPBOX_TOKEN";
 
 let map;
 let startPoint;
 
-// ---------- 現在地取得 ----------
+// -------------------- 現在地取得 --------------------
 navigator.geolocation.getCurrentPosition(pos => {
   startPoint = [pos.coords.longitude, pos.coords.latitude];
 
@@ -50,7 +54,7 @@ navigator.geolocation.getCurrentPosition(pos => {
   new mapboxgl.Marker().setLngLat(startPoint).addTo(map);
 });
 
-// ---------- localStorage ----------
+// -------------------- localStorage --------------------
 function saveRoute(coords) {
   localStorage.setItem("lastRoute", JSON.stringify(coords));
 }
@@ -60,7 +64,7 @@ function loadLastRoute() {
   return data ? JSON.parse(data) : null;
 }
 
-// ---------- 被り率計算 ----------
+// -------------------- 被り率計算 --------------------
 function overlapRate(routeA, routeB) {
   const round = n => n.toFixed(4); // 約10m精度
 
@@ -77,7 +81,7 @@ function overlapRate(routeA, routeB) {
   return overlap / routeB.length;
 }
 
-// ---------- ルート生成 ----------
+// -------------------- ルート生成 --------------------
 function generateRandomRoute() {
   const radius = 0.005; // 約500m
   const today = new Date().toISOString().slice(0, 10);
@@ -102,7 +106,7 @@ function generateRandomRoute() {
     .then(data => data.routes[0].geometry.coordinates);
 }
 
-// ---------- 描画 ----------
+// -------------------- 描画 --------------------
 function drawRoute(coords) {
   const geojson = {
     type: "Feature",
@@ -128,10 +132,10 @@ function drawRoute(coords) {
   }
 }
 
-// ---------- 被り回避付き生成 ----------
+// -------------------- 被り回避付き生成 --------------------
 function tryGenerateRoute(attempt = 0) {
   if (attempt > 5) {
-    alert("今日はこれ以上新しい道が見つかりませんでした 🙏");
+    alert("今日は新しい道が見つかりませんでした 🙏");
     return;
   }
 
@@ -141,7 +145,6 @@ function tryGenerateRoute(attempt = 0) {
     if (lastRoute) {
       const rate = overlapRate(lastRoute, newRoute);
       if (rate > 0.4) {
-        console.log("被りすぎ → 再生成", rate);
         tryGenerateRoute(attempt + 1);
         return;
       }
@@ -151,7 +154,7 @@ function tryGenerateRoute(attempt = 0) {
     saveRoute(newRoute);
   });
 }
-</script>
 
-</body>
-</html>
+// -------------------- ボタン --------------------
+document.getElementById("routeBtn")
+  .addEventListener("click", tryGenerateRoute);
